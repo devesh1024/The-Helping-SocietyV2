@@ -16,6 +16,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import adminRoutes from './routes/adminRoutes';
 import opportunityRoutes from './routes/opportunityRoutes';
 import userRoutes from './routes/userRoutes';
+import hackathonRoutes from './routes/hackathonRoutes';
 import { startCleanupJob } from './jobs/cleanupJob';
 
 const app = express();
@@ -91,6 +92,7 @@ app.use('/api/v1', notificationRoutes);
 app.use('/api/v1', adminRoutes);
 app.use('/api/v1', opportunityRoutes);
 app.use('/api/v1', userRoutes);
+app.use('/api/v1', hackathonRoutes);
 
 app.get('/api/v1/health', (req: Request, res: Response) => {
   res.status(200).json({

@@ -6,7 +6,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, BookOpen, Briefcase, Heart, LifeBuoy, LogOut, Menu, Shield, User as UserIcon, X } from "lucide-react";
+import { Bell, BookOpen, Briefcase, Heart, LifeBuoy, LogOut, Menu, Shield, User as UserIcon, X, Trophy } from "lucide-react";
 import { useState } from "react";
 import { NotificationBell } from "./NotificationBell";
 import { ThemeToggle } from "./ThemeToggle";
@@ -16,6 +16,7 @@ const links = [
   { to: "/opportunities", label: "Opportunities", icon: Briefcase },
   { to: "/community", label: "Community", icon: Heart },
   { to: "/support", label: "Support", icon: LifeBuoy },
+  { to: "/hackathons", label: "Hackathons", icon: Trophy },
 ];
 
 export function Navbar() {
@@ -27,7 +28,7 @@ export function Navbar() {
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between gap-4">
         <NavLink to="/" className="flex items-center gap-2.5 group">
-          <Logo className="h-9 w-9 transition-transform group-hover:scale-105" />
+          <Logo className="h-9 w-auto" />
           <div className="hidden sm:flex flex-col leading-tight">
             <span className="font-display font-bold text-[15px] text-foreground">The Helping Society</span>
             <span className="text-[10px] uppercase tracking-widest text-muted-foreground">UECU</span>

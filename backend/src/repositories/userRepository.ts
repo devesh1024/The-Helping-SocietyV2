@@ -38,3 +38,7 @@ export const createUser = async (userData: any): Promise<IUser> => {
 export const updateUser = async (id: string, updateData: any): Promise<IUser | null> => {
   return User.findByIdAndUpdate(id, updateData, { new: true, runValidators: true }).exec();
 };
+
+export const findByIdWithResetToken = async (id: string): Promise<IUser | null> => {
+  return User.findById(id).select('+resetPasswordToken +resetPasswordTokenExpires').exec();
+};

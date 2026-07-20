@@ -63,7 +63,7 @@ const alumniSignupSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters long"),
   phoneNumber: z.string().min(10, "Phone number must be at least 10 digits").max(15),
   branch: z.enum(['cs', 'ce', 'ec', 'ee', 'me', 'cm']),
-  yearOfGraduation: z.coerce.number().int().min(2000).max(new Date().getFullYear() + 10),
+  yearOfGraduation: z.coerce.number().int().min(1950).max(new Date().getFullYear() + 10),
   currentCompany: z.string().trim().min(1, "Current company is required"),
   currentRole: z.string().trim().min(1, "Current role is required"),
   linkedin: z.string().url("Invalid LinkedIn URL").regex(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?$/i, {
@@ -297,13 +297,12 @@ export default function Auth() {
                     />
                     <span className="text-muted-foreground">Remember Me</span>
                   </label>
-                  <button 
-                    type="button"
-                    onClick={() => toast.info("Password reset functionality is not configured yet. Please contact support.")}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    Forgot Password?
-                  </button>
+		  <Link
+  			to="/forgot-password"
+  			className="text-primary hover:underline font-medium"
+			>
+  			Forgot Password?
+		</Link>
                 </div>
               )}
 

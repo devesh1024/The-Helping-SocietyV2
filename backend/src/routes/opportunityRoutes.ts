@@ -47,6 +47,20 @@ router.delete(
   opportunityController.deleteOpportunity
 );
 
+router.post(
+  '/opportunities/:id/like',
+  authenticateUser,
+  authorizeRoles(...generalRoles),
+  opportunityController.toggleLike
+);
+
+router.post(
+  '/opportunities/:id/save',
+  authenticateUser,
+  authorizeRoles(...generalRoles),
+  opportunityController.toggleSave
+);
+
 // Admin-only opportunity request moderation
 router.get(
   '/opportunity-requests',

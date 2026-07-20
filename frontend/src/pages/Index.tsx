@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const modules = [
   { icon: BookOpen, title: "Resource Hub", desc: "Notes, papers and study material — uploaded by peers, approved by admins, viewable in-app via PDF viewer.", color: "from-primary to-primary-glow" },
-  { icon: Briefcase, title: "Opportunities", desc: "Curated jobs, internships and contests posted exclusively by your campus' Khabri admins.", color: "from-secondary to-secondary-glow" },
+  { icon: Briefcase, title: "Opportunities", desc: "Curated jobs, internships and contests posted exclusively by your campus' Our admins.", color: "from-secondary to-secondary-glow" },
   { icon: Heart, title: "Community", desc: "Lost & found, rooms and a campus marketplace — talk to verified people only.", color: "from-primary to-secondary" },
   { icon: LifeBuoy, title: "Support", desc: "Raise help requests. Medical emergencies go live instantly. Stay anonymous if you need to.", color: "from-secondary to-primary" },
 ];

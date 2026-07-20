@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as resourceService from '../services/resourceService';
-import { uploadBuffer } from '../utils/cloudinary';
+import { uploadBuffer, streamFile } from '../utils/googleDrive';;
 import path from 'path';
 
 // Validate file metadata helper
@@ -37,8 +37,8 @@ export const submitUploadRequest = async (req: Request, res: Response, next: Nex
       return res.status(400).json({ success: false, message: 'Title, description, category, year, and branch are required.' });
     }
 
-    const yearFolder = year.toLowerCase().replace(/\s+/g, '_');
-    const branchFolder = branch.toLowerCase().replace(/\s+/g, '_');
+    const yearFolder = year.trim();
+    const branchFolder = branch.trim();
     const folderPath = `academic_resources/${yearFolder}/${branchFolder}`;
 
     // Stream file buffer to Cloudinary
@@ -48,10 +48,11 @@ export const submitUploadRequest = async (req: Request, res: Response, next: Nex
       req.user._id,
       { title, description, category, year, branch },
       {
-        publicId: fileResult.public_id,
+	publicId: fileResult.public_id,
         secureUrl: fileResult.secure_url,
         fileType: path.extname(anyReq.file.originalname).substring(1).toLowerCase(),
-        fileSize: anyReq.file.size
+        fileSize: anyReq.file.size,
+        storageProvider: 'googleDrive'
       }
     );
 
@@ -82,8 +83,8 @@ export const directUpload = async (req: Request, res: Response, next: NextFuncti
       return res.status(400).json({ success: false, message: 'Title, description, category, year, and branch are required.' });
     }
 
-    const yearFolder = year.toLowerCase().replace(/\s+/g, '_');
-    const branchFolder = branch.toLowerCase().replace(/\s+/g, '_');
+    const yearFolder = year.trim();
+    const branchFolder = branch.trim();
     const folderPath = `academic_resources/${yearFolder}/${branchFolder}`;
 
     // Stream file buffer to Cloudinary
@@ -96,7 +97,8 @@ export const directUpload = async (req: Request, res: Response, next: NextFuncti
         publicId: fileResult.public_id,
         secureUrl: fileResult.secure_url,
         fileType: path.extname(anyReq.file.originalname).substring(1).toLowerCase(),
-        fileSize: anyReq.file.size
+        fileSize: anyReq.file.size,
+        storageProvider: 'googleDrive'
       }
     );
 
@@ -150,6 +152,35 @@ export const getResourceById = async (req: Request, res: Response, next: NextFun
       success: true,
       data: { resource }
     });
+  } catch (error: any) {
+    const status = error.message.includes('not found') ? 404 : 500;
+    return res.status(status).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const streamResourceFile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const resource = await resourceService.getResourceById(req.params.id);
+    if (!resource || !resource.file?.publicId) {
+      return res.status(404).json({ success: false, message: 'Resource file not found.' });
+    }
+
+    if (resource.file.storageProvider !== 'googleDrive') {
+      return res.redirect(resource.file.secureUrl);
+    }
+
+    const { stream, mimeType } = await streamFile(resource.file.publicId);
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${resource.title}"`);
+    stream.on('error', (err: Error) => {
+      if (!res.headersSent) {
+        res.status(502).json({ success: false, message: 'Failed to stream file from storage.' });
+      }
+    });
+    stream.pipe(res);
   } catch (error: any) {
     const status = error.message.includes('not found') ? 404 : 500;
     return res.status(status).json({

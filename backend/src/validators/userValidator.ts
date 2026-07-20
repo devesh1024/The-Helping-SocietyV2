@@ -9,7 +9,7 @@ export const UpdateProfileSchema = z.object({
   phoneNumber: z.string().min(10, 'Phone number must be at least 10 digits').max(15, 'Phone number cannot exceed 15 digits').optional(),
   // Student-specific fields
   branch: branchEnum.optional(),
-  yearOfRegistration: z.number().int().min(2000).max(new Date().getFullYear()).optional(),
+  yearOfRegistration: z.number().int().min(1950).max(new Date().getFullYear()).optional(),
   dob: z.preprocess(
     (val) => (typeof val === 'string' ? new Date(val) : val),
     z.date().optional()

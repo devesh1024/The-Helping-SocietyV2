@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
@@ -47,6 +48,7 @@ const mapBackendToFrontend = (opp: any): Opportunity => ({
 
 export default function Opportunities() {
   const { isKhabri, isAdmin, user } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -84,7 +86,7 @@ export default function Opportunities() {
             <h1 className="font-display text-3xl md:text-4xl font-bold flex items-center gap-3">
               <Briefcase className="h-8 w-8 text-primary" /> Opportunities
             </h1>
-            <p className="text-muted-foreground mt-1">Curated jobs, internships and workshops, posted by Khabri admins.</p>
+            <p className="text-muted-foreground mt-1">Curated jobs, internships and workshops, posted by Our Admins.</p>
           </div>
           {(isAdmin || isKhabri || user?.role === "student" || user?.role === "alumni") && (
             <Button variant="hero" onClick={() => setOpen(true)}>
@@ -102,7 +104,7 @@ export default function Opportunities() {
             {items.map((o) => {
               const isWorkshop = o.category === "Workshop";
               return (
-                <Card key={o.id} className="p-6 hover:shadow-elegant transition-smooth flex flex-col">
+                <Card key={o.id} onClick={() => navigate(`/opportunities/${o.id}`)} className="p-6 hover:shadow-elegant transition-smooth flex flex-col cursor-pointer" >
                   <div className="flex justify-between items-start gap-3">
                     <div>
                       <p className="text-xs uppercase tracking-wider text-secondary font-medium flex items-center gap-1.5">
@@ -127,7 +129,7 @@ export default function Opportunities() {
                     {!isWorkshop && o.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {o.location}</span>}
                     {!isWorkshop && o.deadline && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {format(new Date(o.deadline), "PP")}</span>}
                   </div>
-                  <div className="flex gap-2 mt-auto pt-4">
+                  <div className="flex gap-2 mt-auto pt-4" onClick={(e) => e.stopPropagation()}>
                     <Button asChild variant="hero" size="sm" className="flex-1">
                       <a href={o.apply_url} target="_blank" rel="noopener noreferrer">{isWorkshop ? "Register" : "Apply"} <ExternalLink className="h-3.5 w-3.5" /></a>
                     </Button>

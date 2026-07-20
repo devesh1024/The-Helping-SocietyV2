@@ -10,7 +10,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const router = Router();
 
 const generalRoles = ['student', 'coreTeam', 'faculty', 'admin', 'alumni'];
-const studentCreatorRoles = ['student', 'coreTeam', 'alumni'];
+const studentCreatorRoles = ['student', 'coreTeam', 'alumni', 'admin'];
 
 // === Lost & Found Routes ===
 router.post(

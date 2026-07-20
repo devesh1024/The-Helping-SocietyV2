@@ -14,6 +14,7 @@ const WHITELIST_KEYS = new Set([
   'limit',
   'skip',
   'perPage',
+  'extraAnswers', // hackathon submissions: raw JSON string, sanitized field-by-field post-parse instead
   // add more if needed
 ]);
 

@@ -285,16 +285,8 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 
 export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { token } = req.query;
-    if (!token || typeof token !== 'string') {
-      return res.status(400).json({
-        success: false,
-        message: 'Password reset token is required.'
-      });
-    }
-
-    const validatedData = ResetPasswordSchema.parse(req.body);
-    await authService.resetPassword(token, validatedData.password);
+	const validatedData = ResetPasswordSchema.parse(req.body);
+    	await authService.resetPassword(validatedData.token, validatedData.password);
 
     return res.status(200).json({
       success: true,

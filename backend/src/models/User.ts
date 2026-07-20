@@ -12,6 +12,7 @@ export interface IUser extends Document {
   emailVerificationTokenExpires?: Date | null;
   resetPasswordToken?: string | null;
   resetPasswordTokenExpires?: Date | null;
+  sessionVersion: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,7 +42,8 @@ const BaseUserSchema = new Schema<IUser>({
   emailVerificationToken: { type: String, select: false, default: null },
   emailVerificationTokenExpires: { type: Date, select: false, default: null },
   resetPasswordToken: { type: String, select: false, default: null },
-  resetPasswordTokenExpires: { type: Date, select: false, default: null }
+  resetPasswordTokenExpires: { type: Date, select: false, default: null },
+  sessionVersion: { type: Number, default: 0 }
 }, { 
   timestamps: true, 
   discriminatorKey: 'role', 
@@ -78,7 +80,8 @@ const StudentSchema = new Schema<IStudent>({
   yearOfRegistration: { type: Number, required: true },
   dob: { type: Date, required: true },
   phoneNumber: { type: String, required: true },
-  isCoreTeam: { type: Boolean, default: false }
+  isCoreTeam: { type: Boolean, default: false },
+  sessionVersion: { type: Number, default: 0 }
 });
 
 export const Student = User.discriminator<IStudent>('student', StudentSchema);

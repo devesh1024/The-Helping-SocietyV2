@@ -109,12 +109,60 @@ export const getOpportunities = async (query: {
   return { opportunities, total, page, limit, totalPages };
 };
 
-export const getOpportunityById = async (id: string): Promise<IOpportunity> => {
+export const getOpportunityById = async (id: string, userId?: string): Promise<any> => {
   const opportunity = await opportunityRepository.findOpportunityById(id);
   if (!opportunity) {
     throw new Error('Opportunity not found.');
   }
-  return opportunity;
+
+  let isLiked = false;
+  let isSaved = false;
+  if (userId) {
+    const [like, save] = await Promise.all([
+      opportunityRepository.findLike(userId, id),
+      opportunityRepository.findSave(userId, id)
+    ]);
+    isLiked = !!like;
+    isSaved = !!save;
+  }
+
+  return {
+    ...(opportunity as any).toObject(),
+    isLiked,
+    isSaved
+  };
+};
+
+export const toggleLike = async (
+  userId: string | mongoose.Types.ObjectId,
+  opportunityId: string | mongoose.Types.ObjectId
+) => {
+  const existingLike = await opportunityRepository.findLike(userId, opportunityId);
+
+  if (existingLike) {
+    await opportunityRepository.removeLike(userId, opportunityId);
+    const opportunity = await opportunityRepository.decrementLikes(opportunityId.toString());
+    return { liked: false, likesCount: opportunity?.likesCount || 0 };
+  } else {
+    await opportunityRepository.addLike(userId, opportunityId);
+    const opportunity = await opportunityRepository.incrementLikes(opportunityId.toString());
+    return { liked: true, likesCount: opportunity?.likesCount || 0 };
+  }
+};
+
+export const toggleSave = async (
+  userId: string | mongoose.Types.ObjectId,
+  opportunityId: string | mongoose.Types.ObjectId
+) => {
+  const existingSave = await opportunityRepository.findSave(userId, opportunityId);
+
+  if (existingSave) {
+    await opportunityRepository.removeSave(userId, opportunityId);
+    return { saved: false };
+  } else {
+    await opportunityRepository.addSave(userId, opportunityId);
+    return { saved: true };
+  }
 };
 
 export const updateOpportunity = async (

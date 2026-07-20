@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/context/AuthContext";
-import { api } from "@/lib/api";
+import { api, getAccessToken } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -79,7 +79,7 @@ export default function Resources() {
   const [likedSet, setLikedSet] = useState<Set<string>>(new Set());
   const [openUpload, setOpenUpload] = useState(false);
   const [viewing, setViewing] = useState<Resource | null>(null);
-  const [viewUrl, setViewUrl] = useState<string | null>(null);
+  const [viewUrl, setViewUrl] = useState<{ url: string; httpHeaders?: Record<string, string> } | null>(null);
 
   // debounce search input
   useEffect(() => {
@@ -166,25 +166,37 @@ export default function Resources() {
     }
   };
 
-  const view = (r: Resource) => {
-    if (!isVerified) {
-      toast.error("Get verified to open files");
-      return;
+  const view = async (r: Resource) => {
+  if (!isVerified) {
+    toast.error("Get verified to open files");
+    return;
+  }
+  if (!r.file?.publicId) {
+    toast.error("Could not load file URL");
+    return;
+  }
+  const proxyUrl = `${api.defaults.baseURL}/resources/${r._id}/file`;
+  const isPdf = r.file.fileType === "pdf";
+
+  if (!isPdf) {
+    try {
+      const res = await api.get(`/resources/${r._id}/file`, { responseType: "blob" });
+      const blobUrl = URL.createObjectURL(res.data);
+      window.open(blobUrl, "_blank");
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch {
+      toast.error("Could not open file.");
     }
-    const fileUrl = r.file.secureUrl;
-    if (!fileUrl) {
-      toast.error("Could not load file URL");
-      return;
-    }
-    const isPdf = r.file.fileType === "pdf" || fileUrl.toLowerCase().endsWith(".pdf");
-    if (!isPdf) {
-      // PPT/PPTX/DOCX — open/download in new tab since browser canvas doesn't render natively
-      window.open(fileUrl, "_blank");
-      return;
-    }
-    setViewUrl(fileUrl);
-    setViewing(r);
-  };
+    return;
+  }
+
+  setViewUrl({
+    url: proxyUrl,
+    httpHeaders: { Authorization: `Bearer ${getAccessToken()}` },
+  });
+  setViewing(r);
+};
+ 
 
   const remove = async (r: Resource) => {
     if (!confirm("Delete this resource?")) return;
