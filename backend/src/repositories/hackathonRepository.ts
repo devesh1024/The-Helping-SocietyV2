@@ -61,7 +61,6 @@ export const findTeamByHackathonAndMember = async (
   return HackathonTeam.findOne({ hackathonId, members: userId }).exec();
 };
 
-// Display-only variant with member/leader names populated. NOT used for authorization checks
 export const findTeamByHackathonAndMemberPopulated = async (
   hackathonId: string,
   userId: string
@@ -73,13 +72,12 @@ export const findTeamByHackathonAndMemberPopulated = async (
 };
 
 export const findTeamsByHackathon = async (hackathonId: string): Promise<any[]> => {
-  // Admin-only listing
   return HackathonTeam.find({ hackathonId })
     .populate('leaderId', 'fullName')
     .populate('members', 'fullName')
     .sort({ createdAt: -1 })
     .exec();
-}
+};
 
 export const updateTeam = async (id: string, updateData: any): Promise<IHackathonTeam | null> => {
   return HackathonTeam.findByIdAndUpdate(id, updateData, { new: true, runValidators: true }).exec();

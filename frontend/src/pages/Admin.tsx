@@ -8,11 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Ban, Check, Eye, FileCheck, Loader2, Search, ShieldCheck, Trash2, X } from "lucide-react";
+import { Ban, Check, Eye, FileCheck, Loader2, Search, ShieldCheck, Trash2, X, Plus, Pencil, ArrowLeft, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PdfViewer } from "@/components/PdfViewer";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function Admin() {
   return (
@@ -28,11 +31,13 @@ export default function Admin() {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="resources">Resources</TabsTrigger>
             <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
+            <TabsTrigger value="hackathons">Hackathons</TabsTrigger>
             <TabsTrigger value="audit">Audit Log</TabsTrigger>
           </TabsList>
           <TabsContent value="users" className="mt-6"><UsersPanel /></TabsContent>
           <TabsContent value="resources" className="mt-6"><ResourcesPanel /></TabsContent>
           <TabsContent value="opportunities" className="mt-6"><OpportunitiesPanel /></TabsContent>
+          <TabsContent value="hackathons" className="mt-6"><HackathonsPanel /></TabsContent>
           <TabsContent value="audit" className="mt-6"><AuditPanel /></TabsContent>
         </Tabs>
       </div>
@@ -473,6 +478,568 @@ function OpportunitiesPanel() {
           })}
           {items.length === 0 && <Card className="p-8 text-center text-muted-foreground">Nothing here.</Card>}
         </div>}
+    </div>
+  );
+}
+
+// ==================== Hackathons ====================
+
+// Each dropdown option maps to a small group of extensions, so admins pick one
+// intuitive category (e.g. "Word Document") rather than typing raw extensions,
+// while the backend's accept[] still gets a sensible multi-extension list.
+const FILE_TYPE_OPTIONS = [
+  { value: "pdf", label: "PDF", accept: ["pdf"] },
+  { value: "word", label: "Word Document (doc, docx)", accept: ["doc", "docx"] },
+  { value: "ppt", label: "PowerPoint (ppt, pptx)", accept: ["ppt", "pptx"] },
+  { value: "excel", label: "Excel Spreadsheet (xlsx, csv)", accept: ["xlsx", "csv"] },
+  { value: "image", label: "Image (jpg, png)", accept: ["jpg", "jpeg", "png"] },
+  { value: "video", label: "Video (mp4)", accept: ["mp4"] },
+  { value: "zip", label: "ZIP Archive", accept: ["zip"] },
+];
+
+const findFileTypeValues = (accept: string[] | undefined): string[] => {
+  if (!accept || accept.length === 0) return [];
+  return FILE_TYPE_OPTIONS.filter((opt) => opt.accept.some((e) => accept.includes(e))).map((opt) => opt.value);
+};
+
+function HackathonsPanel() {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [teamsDialogId, setTeamsDialogId] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/hackathons", { params: { limit: 100 } });
+      let list = response.data?.data?.hackathons || [];
+      if (filter !== "all") list = list.filter((h: any) => h.status === filter);
+      setItems(list);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load hackathons");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { load(); }, [filter]);
+
+  const remove = async (h: any) => {
+    if (!confirm(`Delete "${h.title}"? This cannot be undone.`)) return;
+    try {
+      await api.delete(`/hackathons/${h._id}`);
+      toast.success("Deleted");
+      load();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to delete");
+    }
+  };
+
+  const setStatus = async (h: any, status: "live" | "closed") => {
+    try {
+      await api.put(`/hackathons/${h._id}`, { status });
+      toast.success("Updated");
+      load();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  if (reviewingId) {
+    return <SubmissionsReviewPanel hackathonId={reviewingId} onBack={() => setReviewingId(null)} />;
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex gap-2">
+          {["all", "draft", "live", "closed"].map((s) => (
+            <Button key={s} size="sm" variant={filter === s ? "hero" : "outline"} onClick={() => setFilter(s)}>
+              {s}
+            </Button>
+          ))}
+        </div>
+        <Button size="sm" variant="hero" onClick={() => { setEditing(null); setDialogOpen(true); }}>
+          <Plus className="h-3.5 w-3.5 mr-1" /> New Hackathon
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="grid place-items-center py-10"><Loader2 className="animate-spin" /></div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((h) => (
+            <Card key={h._id} className="p-4 flex flex-wrap items-center gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <p className="font-semibold">{h.title}</p>
+                <p className="text-xs text-muted-foreground capitalize">
+                  {h.category.replace("_", " ")} · {h.participationMode}
+                </p>
+              </div>
+              <Badge
+                variant={h.status === "closed" ? "secondary" : "outline"}
+                className={h.status === "live" ? "bg-success text-white hover:bg-success/80" : ""}
+              >
+                {h.status}
+              </Badge>
+              <div className="flex gap-1">
+                {h.status === "draft" && (
+                  <Button size="sm" variant="hero" onClick={() => setStatus(h, "live")} title="Publish">
+                    <Check className="h-3 w-3" />
+                  </Button>
+                )}
+                {h.status === "live" && (
+                  <Button size="sm" variant="outline" onClick={() => setStatus(h, "closed")} title="Close">
+                    <Ban className="h-3 w-3" />
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" onClick={() => { setEditing(h); setDialogOpen(true); }} title="Edit">
+                  <Pencil className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setTeamsDialogId(h._id)} title="View Teams">
+                  <Users className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setReviewingId(h._id)} title="Review Submissions">
+                  <FileCheck className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => remove(h)} title="Delete">
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </Card>
+          ))}
+          {items.length === 0 && <Card className="p-8 text-center text-muted-foreground">No hackathons yet.</Card>}
+        </div>
+      )}
+
+      <HackathonFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editing={editing}
+        onSaved={() => { setDialogOpen(false); load(); }}
+      />
+      {teamsDialogId && <TeamsDialog hackathonId={teamsDialogId} onClose={() => setTeamsDialogId(null)} />}
+    </div>
+  );
+}
+
+function HackathonFormDialog({
+  open,
+  onOpenChange,
+  editing,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  editing: any | null;
+  onSaved: () => void;
+}) {
+  const isEdit = !!editing;
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("technical");
+  const [participationMode, setParticipationMode] = useState("individual");
+  const [teamMin, setTeamMin] = useState("2");
+  const [teamMax, setTeamMax] = useState("4");
+  const [launchDate, setLaunchDate] = useState("");
+  const [registrationDeadline, setRegistrationDeadline] = useState("");
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    if (editing) {
+      setTitle(editing.title || "");
+      setDescription(editing.description || "");
+      setCategory(editing.category || "technical");
+      setParticipationMode(editing.participationMode || "individual");
+      setTeamMin((editing.teamSize?.min ?? 2).toString());
+      setTeamMax((editing.teamSize?.max ?? 4).toString());
+      setLaunchDate(editing.launchDate ? editing.launchDate.slice(0, 16) : "");
+      setRegistrationDeadline(editing.registrationDeadline ? editing.registrationDeadline.slice(0, 16) : "");
+      setQuestions(
+        (editing.extraQuestions || []).map((q: any) => ({
+          ...q,
+          optionsText: (q.options || []).join(", "),
+          fileTypes: q.type === "file" ? findFileTypeValues(q.accept) : [],
+        }))
+      );
+    } else {
+      setTitle("");
+      setDescription("");
+      setCategory("technical");
+      setParticipationMode("individual");
+      setTeamMin("2");
+      setTeamMax("4");
+      setLaunchDate("");
+      setRegistrationDeadline("");
+      setQuestions([]);
+    }
+  }, [open, editing]);
+
+  const canEditQuestions = !isEdit || editing.status === "draft";
+
+  const addQuestion = () =>
+    setQuestions((prev) => [...prev, { key: "", label: "", type: "text", required: false, optionsText: "", fileTypes: [] }]);
+  const updateQuestion = (i: number, patch: any) =>
+    setQuestions((prev) => prev.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
+  const removeQuestion = (i: number) => setQuestions((prev) => prev.filter((_, idx) => idx !== i));
+
+  const submit = async () => {
+    if (!title.trim() || !description.trim()) {
+      toast.error("Title and description are required.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const payload: any = {
+        title,
+        description,
+        category,
+        participationMode,
+        launchDate: launchDate || undefined,
+        registrationDeadline: registrationDeadline || undefined,
+      };
+      if (participationMode !== "individual") {
+        payload.teamSize = { min: parseInt(teamMin, 10), max: parseInt(teamMax, 10) };
+      }
+      if (canEditQuestions) {
+        payload.extraQuestions = questions.map((q) => ({
+          key: q.key,
+          label: q.label,
+          type: q.type,
+          required: q.required,
+          options:
+            q.type === "radio" || q.type === "checkbox"
+              ? q.optionsText.split(",").map((s: string) => s.trim()).filter(Boolean)
+              : undefined,
+          accept:
+            q.type === "file"
+              ? FILE_TYPE_OPTIONS.filter((o) => (q.fileTypes || []).includes(o.value)).flatMap((o) => o.accept)
+              : undefined,
+        }));
+      }
+
+      if (isEdit) {
+        await api.put(`/hackathons/${editing._id}`, payload);
+        toast.success("Hackathon updated.");
+      } else {
+        await api.post("/hackathons", payload);
+        toast.success("Hackathon created as draft.");
+      }
+      onSaved();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to save hackathon.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{isEdit ? "Edit Hackathon" : "New Hackathon"}</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div><Label>Title</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+          <div>
+            <Label>Description (markdown supported)</Label>
+            <Textarea rows={6} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="technical">Technical</SelectItem>
+                  <SelectItem value="poster">Poster</SelectItem>
+                  <SelectItem value="video">Video</SelectItem>
+                  <SelectItem value="social_media">Social Media</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Participation Mode</Label>
+              <Select value={participationMode} onValueChange={setParticipationMode}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual">Individual only</SelectItem>
+                  <SelectItem value="team">Team only</SelectItem>
+                  <SelectItem value="both">Both</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {participationMode !== "individual" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Min team size</Label><Input type="number" min={1} value={teamMin} onChange={(e) => setTeamMin(e.target.value)} /></div>
+              <div><Label>Max team size</Label><Input type="number" min={1} value={teamMax} onChange={(e) => setTeamMax(e.target.value)} /></div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Launch Date</Label><Input type="datetime-local" value={launchDate} onChange={(e) => setLaunchDate(e.target.value)} /></div>
+            <div><Label>Registration Deadline</Label><Input type="datetime-local" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)} /></div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Submission Questions</Label>
+              {canEditQuestions && (
+                <Button size="sm" variant="outline" onClick={addQuestion}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add
+                </Button>
+              )}
+            </div>
+            {!canEditQuestions && (
+              <p className="text-xs text-muted-foreground mb-2">
+                Questions can only be edited while the hackathon is in draft.
+              </p>
+            )}
+            <div className="space-y-3">
+              {questions.map((q, i) => (
+                <Card key={i} className="p-3 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      placeholder="Key (e.g. report)"
+                      value={q.key}
+                      onChange={(e) => updateQuestion(i, { key: e.target.value })}
+                      disabled={!canEditQuestions}
+                    />
+                    <Input
+                      placeholder="Label (e.g. Upload your report)"
+                      value={q.label}
+                      onChange={(e) => updateQuestion(i, { label: e.target.value })}
+                      disabled={!canEditQuestions}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 items-center">
+                    <Select value={q.type} onValueChange={(v) => updateQuestion(i, { type: v })} disabled={!canEditQuestions}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="text">Text</SelectItem>
+                        <SelectItem value="number">Number</SelectItem>
+                        <SelectItem value="radio">Radio</SelectItem>
+                        <SelectItem value="checkbox">Checkbox</SelectItem>
+                        <SelectItem value="file">File</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id={`req-${i}`}
+                        checked={q.required}
+                        onCheckedChange={(v) => updateQuestion(i, { required: !!v })}
+                        disabled={!canEditQuestions}
+                      />
+                      <Label htmlFor={`req-${i}`} className="font-normal">Required</Label>
+                    </div>
+                  </div>
+                  {(q.type === "radio" || q.type === "checkbox") && (
+                    <Input
+                      placeholder="Options, comma separated"
+                      value={q.optionsText}
+                      onChange={(e) => updateQuestion(i, { optionsText: e.target.value })}
+                      disabled={!canEditQuestions}
+                    />
+                  )}
+                  {q.type === "file" && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground font-normal">Accepted file types</Label>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        {FILE_TYPE_OPTIONS.map((opt) => {
+                          const selectedTypes: string[] = q.fileTypes || [];
+                          const checked = selectedTypes.includes(opt.value);
+                          return (
+                            <div key={opt.value} className="flex items-center gap-2">
+                              <Checkbox
+                                id={`filetype-${i}-${opt.value}`}
+                                checked={checked}
+                                disabled={!canEditQuestions}
+                                onCheckedChange={(v) => {
+                                  const next = v
+                                    ? [...selectedTypes, opt.value]
+                                    : selectedTypes.filter((s) => s !== opt.value);
+                                  updateQuestion(i, { fileTypes: next });
+                                }}
+                              />
+                              <Label htmlFor={`filetype-${i}-${opt.value}`} className="font-normal">
+                                {opt.label}
+                              </Label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {canEditQuestions && (
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => removeQuestion(i)}>
+                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
+                    </Button>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <Button variant="hero" className="w-full" onClick={submit} disabled={busy}>
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : isEdit ? "Save Changes" : "Create as Draft"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TeamsDialog({ hackathonId, onClose }: { hackathonId: string; onClose: () => void }) {
+  const [teams, setTeams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get(`/hackathons/${hackathonId}/teams`);
+        setTeams(res.data?.data?.teams || []);
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to load teams.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [hackathonId]);
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Teams</DialogTitle></DialogHeader>
+        {loading ? (
+          <div className="grid place-items-center py-10"><Loader2 className="animate-spin" /></div>
+        ) : teams.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No teams yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {teams.map((t: any) => (
+              <Card key={t._id} className="p-3">
+                <p className="font-medium">
+                  {t.name} <span className="text-xs text-muted-foreground font-normal">({t.joinCode})</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leader: {t.leaderId?.fullName || t.leaderId} · Members:{" "}
+                  {(t.members || []).map((m: any) => m.fullName || m).join(", ")}
+                </p>
+              </Card>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SubmissionsReviewPanel({ hackathonId, onBack }: { hackathonId: string; onBack: () => void }) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [comment, setComment] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const params: any = { limit: 100 };
+      if (filter !== "all") params.decision = filter;
+      const res = await api.get(`/hackathons/${hackathonId}/submissions`, { params });
+      setItems(res.data?.data?.submissions || []);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load submissions.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { load(); }, [filter, hackathonId]);
+
+  const decide = async (id: string, decision: "selected" | "rejected") => {
+    try {
+      await api.patch(`/hackathons/submissions/${id}/decision`, { decision, decisionComment: comment || undefined });
+      toast.success("Submission reviewed.");
+      setDecidingId(null);
+      setComment("");
+      load();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to review submission.");
+    }
+  };
+
+  return (
+    <div>
+      <Button variant="ghost" size="sm" onClick={onBack} className="mb-4">
+        <ArrowLeft className="h-4 w-4 mr-1" /> Back to Hackathons
+      </Button>
+      <div className="flex gap-2 mb-4">
+        {["all", "pending", "selected", "rejected"].map((s) => (
+          <Button key={s} size="sm" variant={filter === s ? "hero" : "outline"} onClick={() => setFilter(s)}>
+            {s}
+          </Button>
+        ))}
+      </div>
+      {loading ? (
+        <div className="grid place-items-center py-10"><Loader2 className="animate-spin" /></div>
+      ) : items.length === 0 ? (
+        <Card className="p-8 text-center text-muted-foreground">No submissions.</Card>
+      ) : (
+        <div className="space-y-3">
+          {items.map((s: any) => (
+            <Card key={s._id} className="p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex-1 min-w-[240px]">
+                  <p className="font-semibold">{s.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    By: {s.participantType === "team" ? (s.teamId?.name || "Team") : (s.userId?.fullName || "Unknown")}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{s.description}</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {s.repoUrl && <a href={s.repoUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Repo</a>}
+                    {s.demoUrl && <a href={s.demoUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Demo</a>}
+                    {s.videoUrl && <a href={s.videoUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Video</a>}
+                    {(s.files || []).map((f: any) => (
+                      <a key={f.key} href={f.secureUrl} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-0.5 rounded-full hover:bg-muted/70">
+                        {f.key}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+                <Badge
+                  variant={s.decision === "rejected" ? "destructive" : "outline"}
+                  className={s.decision === "selected" ? "bg-success text-white hover:bg-success/80" : ""}
+                >
+                  {s.decision}
+                </Badge>
+              </div>
+              {s.decision === "pending" && (
+                decidingId === s._id ? (
+                  <div className="mt-3 space-y-2">
+                    <Textarea placeholder="Optional comment" rows={2} value={comment} onChange={(e) => setComment(e.target.value)} />
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="hero" onClick={() => decide(s._id, "selected")}>Select</Button>
+                      <Button size="sm" variant="destructive" onClick={() => decide(s._id, "rejected")}>Reject</Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setDecidingId(null); setComment(""); }}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" className="mt-3" onClick={() => setDecidingId(s._id)}>Review</Button>
+                )
+              )}
+              {s.decisionComment && (
+                <p className="text-xs bg-muted/50 rounded p-2 mt-2">
+                  <span className="font-medium">Note: </span>{s.decisionComment}
+                </p>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

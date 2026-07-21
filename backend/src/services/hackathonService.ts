@@ -198,11 +198,11 @@ export const joinTeam = async (
   return updated as IHackathonTeam;
 };
 
-export const getMyTeam = async (hackathonId: string, userId: string): Promise<IHackathonTeam | null> => {
-  return hackathonRepository.findTeamByHackathonAndMember(hackathonId, userId);
+export const getMyTeam = async (hackathonId: string, userId: string): Promise<any> => {
+  return hackathonRepository.findTeamByHackathonAndMemberPopulated(hackathonId, userId);
 };
 
-export const listTeams = async (hackathonId: string): Promise<IHackathonTeam[]> => {
+export const listTeams = async (hackathonId: string): Promise<any[]> => {
   // Admin-only oversight listing — includes joinCode, since only admins can call this route.
   return hackathonRepository.findTeamsByHackathon(hackathonId);
 };
