@@ -58,7 +58,7 @@ export const RegisterAlumniSchema = z.object({
   branch: branchEnum,
   yearOfGraduation: z.preprocess(
     (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().int().min(2000).max(new Date().getFullYear() + 10)
+    z.number().int().min(1950).max(new Date().getFullYear() + 10)
   ),
   currentCompany: z.string().min(1, 'Current company is required').max(100),
   currentRole: z.string().min(1, 'Current role is required').max(100),
@@ -78,6 +78,7 @@ export const ForgotPasswordSchema = z.object({
 });
 
 export const ResetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required.'),
   password: z.string().min(8, 'Password must be at least 8 characters long'),
   confirmPassword: z.string().min(8, 'Confirm password is required')
 }).refine((data) => data.password === data.confirmPassword, {

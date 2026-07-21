@@ -11,6 +11,8 @@ import Auth from "./pages/Auth.tsx";
 import Profile from "./pages/Profile.tsx";
 import Resources from "./pages/Resources.tsx";
 import Opportunities from "./pages/Opportunities.tsx";
+import Hackathons from "./pages/Hackathons.tsx";
+import HackathonDetail from "./pages/HackathonDetail.tsx";
 import Community from "./pages/Community.tsx";
 import Support from "./pages/Support.tsx";
 import Admin from "./pages/Admin.tsx";
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
             <Route path="/opportunities" element={<ProtectedRoute><Opportunities /></ProtectedRoute>} />
+            <Route path="/hackathons" element={<ProtectedRoute><Hackathons /></ProtectedRoute>} />
+            <Route path="/hackathons/:id" element={<ProtectedRoute><HackathonDetail /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
             <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />

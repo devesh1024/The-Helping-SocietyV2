@@ -9,12 +9,13 @@ interface IFileMetadata {
   secureUrl: string;
   fileType: string;
   fileSize: number;
+  storageProvider?: 'cloudinary' | 'googleDrive';
 }
 
 export const submitUploadRequest = async (
   userId: string | mongoose.Types.ObjectId,
   resourceData: { title: string; description: string; category: string; year: string; branch: string },
-  fileData: { publicId: string; secureUrl: string; fileType: string; fileSize: number }
+  fileData: { publicId: string; secureUrl: string; fileType: string; fileSize: number; storageProvider?: 'cloudinary' | 'googleDrive'; }
 ) => {
   return resourceRequestRepository.createRequest({
     title: resourceData.title,
@@ -31,7 +32,7 @@ export const submitUploadRequest = async (
 export const directUpload = async (
   userId: string | mongoose.Types.ObjectId,
   resourceData: { title: string; description: string; category: string; year: string; branch: string },
-  fileData: { publicId: string; secureUrl: string; fileType: string; fileSize: number }
+  fileData: { publicId: string; secureUrl: string; fileType: string; fileSize: number; storageProvider?: 'cloudinary' | 'googleDrive'; }
 ) => {
   return resourceRepository.createResource({
     title: resourceData.title,

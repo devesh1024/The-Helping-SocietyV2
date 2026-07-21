@@ -11,6 +11,7 @@ export interface IResource extends Document {
     secureUrl: string;
     fileType: string;
     fileSize: number; // in bytes
+    storageProvider?: 'cloudinary' | 'googleDrive';
   };
   uploadedBy: mongoose.Types.ObjectId;
   likesCount: number;
@@ -51,7 +52,8 @@ const ResourceSchema = new Schema<IResource>({
       type: Number,
       required: true,
       max: [50 * 1024 * 1024, 'File size cannot exceed 50MB']
-    }
+    },
+    storageProvider: { type: String, enum: ['cloudinary', 'googleDrive'], default: 'cloudinary' }
   },
   uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   likesCount: { type: Number, default: 0, min: 0 }

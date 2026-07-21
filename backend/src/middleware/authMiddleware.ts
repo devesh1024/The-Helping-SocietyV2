@@ -46,6 +46,13 @@ export const authenticateUser = async (
       });
     }
 
+    if ((decoded.sessionVersion ?? 0) !== (user.sessionVersion || 0)) {
+      return res.status(401).json({
+        success: false,
+        message: 'You have been logged out because your account was signed in on another device.'
+      });
+    }
+
     if (user.status !== 'active') {
       return res.status(403).json({
         success: false,

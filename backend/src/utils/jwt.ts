@@ -5,6 +5,7 @@ export interface IJWTPayload {
   role: string;
   email: string;
   isCoreTeam: boolean;
+  sessionVersion?: number;
 }
 
 export const signAccessToken = (payload: IJWTPayload): string => {

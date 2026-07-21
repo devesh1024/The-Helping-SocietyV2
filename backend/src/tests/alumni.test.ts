@@ -87,8 +87,8 @@ describe('Alumni Discriminator Tests', () => {
       expect(res.body.success).toBe(false);
     });
 
-    it('should reject registration if graduation year is before 2000', async () => {
-      const invalidData = { ...alumniData, yearOfGraduation: 1999 };
+    it('should reject registration if graduation year is before 1950', async () => {
+      const invalidData = { ...alumniData, yearOfGraduation: 1945 };
       const res = await request(app)
         .post('/api/v1/auth/register/alumni')
         .send(invalidData);

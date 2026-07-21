@@ -6,7 +6,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, BookOpen, Briefcase, Heart, LifeBuoy, LogOut, Menu, Shield, User as UserIcon, X } from "lucide-react";
+import { Bell, BookOpen, Briefcase, Heart, LifeBuoy, LogOut, Menu, Shield, Trophy, User as UserIcon, X } from "lucide-react";
 import { useState } from "react";
 import { NotificationBell } from "./NotificationBell";
 import { ThemeToggle } from "./ThemeToggle";
@@ -14,6 +14,7 @@ import { ThemeToggle } from "./ThemeToggle";
 const links = [
   { to: "/resources", label: "Resources", icon: BookOpen },
   { to: "/opportunities", label: "Opportunities", icon: Briefcase },
+  { to: "/hackathons", label: "Hackathons", icon: Trophy },
   { to: "/community", label: "Community", icon: Heart },
   { to: "/support", label: "Support", icon: LifeBuoy },
 ];

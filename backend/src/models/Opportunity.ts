@@ -17,6 +17,7 @@ export interface IOpportunity extends Document {
   mode?: string;
   workType?: string;
   approvalStatus?: 'pending' | 'approved' | 'rejected';
+  likesCount: number;
 }
 
 const OpportunitySchema = new Schema<IOpportunity>({
@@ -52,7 +53,8 @@ const OpportunitySchema = new Schema<IOpportunity>({
     type: String,
     enum: ['pending', 'approved', 'rejected'],
     default: 'approved'
-  }
+  },
+  likesCount: { type: Number, default: 0, min: 0 }
 }, { timestamps: true });
 
 OpportunitySchema.index({ type: 1 });

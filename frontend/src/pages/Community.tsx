@@ -110,9 +110,9 @@ export default function Community() {
         <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
           <div>
             <h1 className="font-display text-3xl md:text-4xl font-bold flex items-center gap-3">
-              <Heart className="h-8 w-8 text-primary" /> Community Hub
+              <Heart className="h-8 w-8 text-primary" /> Campus Hub
             </h1>
-            <p className="text-muted-foreground mt-1">Talk to verified people on campus.</p>
+            <p className="text-muted-foreground mt-1">Lost & Found, Rooms and Marketplace at one spot.</p>
           </div>
           <Button variant="hero" onClick={() => isVerified ? setOpenCreate(true) : toast.error("Verified users only")}>
             <Plus className="h-4 w-4" /> New post

@@ -42,6 +42,13 @@ router.get(
   resourceController.getResourceById
 );
 
+router.get(
+  '/resources/:id/file',
+  authenticateUser,
+  authorizeRoles('student', 'coreTeam', 'faculty', 'admin', 'alumni'),
+  resourceController.streamResourceFile
+);
+
 // Mutations (restricted by ownership & BOLA middleware)
 router.put(
   '/resources/:id',

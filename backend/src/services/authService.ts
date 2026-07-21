@@ -4,7 +4,6 @@ import * as refreshTokenRepository from '../repositories/refreshTokenRepository'
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { generateRandomToken } from '../utils/crypto';
 import { sendEmail } from '../utils/email';
-import mongoose from 'mongoose';
 
 export const registerStudent = async (studentData: any) => {
   const existingEmail = await userRepository.findByEmail(studentData.email);
@@ -178,12 +177,18 @@ export const login = async (credentials: any) => {
     throw new Error('Your account has been permanently banned.');
   }
 
+  // Enforce single-session login: bump session version and revoke all previous sessions
+  user.sessionVersion = (user.sessionVersion || 0) + 1;
+  await user.save();
+  await refreshTokenRepository.deleteAllUserTokens(user._id);
+
   // Generate tokens
   const payload = {
     id: user._id.toString(),
     role: user.role,
     email: user.email,
-    isCoreTeam: (user as any).isCoreTeam || false
+    isCoreTeam: (user as any).isCoreTeam || false,
+    sessionVersion: user.sessionVersion
   };
 
   const accessToken = signAccessToken(payload);
@@ -192,6 +197,7 @@ export const login = async (credentials: any) => {
   // Store refresh token (expires in 30 days)
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await refreshTokenRepository.saveToken(user._id, refreshToken, expiresAt);
+
 
   // Exclude password from output
   user.password = undefined;
@@ -243,13 +249,15 @@ export const rotateRefreshToken = async (token: string) => {
   // Delete rotated token (single-use constraint)
   await refreshTokenRepository.deleteToken(token);
 
-  // Sign new tokens
+  // Sign new tokens (carry forward the current session version unchanged)
   const payload = {
     id: user._id.toString(),
     role: user.role,
     email: user.email,
-    isCoreTeam: (user as any).isCoreTeam || false
+    isCoreTeam: (user as any).isCoreTeam || false,
+    sessionVersion: user.sessionVersion || 0
   };
+
 
   const newAccessToken = signAccessToken(payload);
   const newRefreshToken = signRefreshToken(payload);
@@ -275,7 +283,7 @@ export const forgotPassword = async (email: string) => {
   user.resetPasswordTokenExpires = resetTokenExpires;
   await user.save();
 
-  const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/reset-password?token=${resetToken}`;
+  const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/reset-password?change=${resetToken}`;
   await sendEmail({
     email: user.email,
     subject: 'Password Reset Request - The Helping Society',

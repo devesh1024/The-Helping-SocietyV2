@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as communityService from '../services/communityService';
-import { uploadImageBuffer } from '../utils/cloudinary';
+import { uploadImageBuffer } from '../utils/googleDrive';
 
 // === Lost & Found ===
 export const createLostFound = async (req: Request, res: Response, next: NextFunction) => {

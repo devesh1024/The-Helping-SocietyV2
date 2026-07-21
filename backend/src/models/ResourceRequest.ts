@@ -11,6 +11,7 @@ export interface IResourceRequest extends Document {
     secureUrl: string;
     fileType: string;
     fileSize: number; // in bytes
+    storageProvider?: 'cloudinary' | 'googleDrive';
   };
   uploadedBy: mongoose.Types.ObjectId;
   status: 'pending' | 'approved' | 'rejected';
@@ -51,7 +52,8 @@ const ResourceRequestSchema = new Schema<IResourceRequest>({
       type: Number, 
       required: true,
       max: [50 * 1024 * 1024, 'File size cannot exceed 50MB']
-    }
+    },
+    storageProvider: { type: String, enum: ['cloudinary', 'googleDrive'], default: 'cloudinary' }
   },
   uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   status: { 

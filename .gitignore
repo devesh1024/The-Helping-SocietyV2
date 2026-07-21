@@ -34,8 +34,12 @@ public/webviewer/
 dist/
 build/
 .agent/
+
 frontend/node_modules/
 backend/node_modules/
 frontend/dist/
 backend/dist/
 brain/
+
+certbot/
+nginx/*/

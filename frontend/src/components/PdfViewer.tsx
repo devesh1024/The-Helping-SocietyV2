@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2 } from "lucide-reac
 // Configure pdfjs worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-export function PdfViewer({ url }: { url: string }) {
+export function PdfViewer({ url }: { url: string | { url: string; httpHeaders?: Record<string, string> } }) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
